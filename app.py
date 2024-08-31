@@ -2,12 +2,10 @@ import sqlite3
 import re
 from datetime import datetime, timedelta
 
-# Conectar ao banco de dados SQLite
 def connect_db():
     conn = sqlite3.connect('biblioteca.db')
     return conn
 
-# Criar tabelas
 def create_tables():
     conn = connect_db()
     cursor = conn.cursor()
@@ -41,31 +39,27 @@ def create_tables():
     conn.commit()
     conn.close()
 
-# Validação de CPF (exemplo básico)
+
 def is_valid_cpf(cpf):
-    # Remove caracteres não numéricos
     cpf = re.sub(r'\D', '', cpf)
     return len(cpf) == 11 and cpf.isdigit()
 
-# Validação de e-mail
+
 def is_valid_email(email):
     return re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email) is not None
 
-# Cadastro de usuário com validações
+
 def cadastrar_usuario(nome, cpf, email, telefone):
-    # Verificar se todos os campos estão preenchidos
+
     if not nome or not cpf or not email or not telefone:
         return "Todos os campos são obrigatórios"
     
-    # Verificar validade do CPF
     if not is_valid_cpf(cpf):
         return "CPF inválido"
     
-    # Verificar validade do e-mail
     if not is_valid_email(email):
         return "E-mail inválido"
     
-    # Conectar ao banco de dados e inserir o usuário
     conn = connect_db()
     cursor = conn.cursor()
     
@@ -80,7 +74,6 @@ def cadastrar_usuario(nome, cpf, email, telefone):
     finally:
         conn.close()
 
-# Atualização de informações do usuário
 def atualizar_usuario(user_id, nome=None, email=None, telefone=None):
     if nome is None and email is None and telefone is None:
         return {"success": False, "message": "Nenhuma informação para atualizar"}
@@ -105,23 +98,20 @@ def atualizar_usuario(user_id, nome=None, email=None, telefone=None):
     finally:
         conn.close()
 
-# Validação de ISBN (exemplo básico)
+
 def is_valid_isbn(isbn):
-    # Remove caracteres não numéricos
     isbn = re.sub(r'\D', '', isbn)
     return len(isbn) in [10, 13] and isbn.isdigit()
 
-# Cadastro de livro com validações
+
 def cadastrar_livro(titulo, autor, isbn, categoria):
-    # Verificar se todos os campos estão preenchidos
     if not titulo or not autor or not isbn or not categoria:
         return {"success": False, "message": "Todos os campos são obrigatórios"}
     
-    # Verificar validade do ISBN
+
     if not is_valid_isbn(isbn):
         return {"success": False, "message": "ISBN inválido"}
 
-    # Conectar ao banco de dados e inserir o livro
     conn = connect_db()
     cursor = conn.cursor()
     
@@ -154,8 +144,7 @@ def remover_livro(livro_id):
     finally:
         conn.close()
 
-# Empréstimo de livro
-# Pensar se vale a pena pesquisar o livro pelo nome
+
 def emprestar_livro(usuario_id, livro_id):
     if not usuario_id or not livro_id:
         return {"success": False, "message": "ID do usuário e do livro são obrigatórios"}
@@ -164,7 +153,6 @@ def emprestar_livro(usuario_id, livro_id):
     cursor = conn.cursor()
 
     try:
-        # Verificar se o livro está disponível
         cursor.execute('SELECT status FROM livros WHERE id = ?', (livro_id,))
         livro = cursor.fetchone()
 
@@ -191,7 +179,7 @@ def emprestar_livro(usuario_id, livro_id):
     finally:
         conn.close()
 
-# Devolução de livro
+
 def devolver_livro(usuario_id, livro_id):
     if not usuario_id or not livro_id:
         return {"success": False, "message": "ID do usuário e do livro são obrigatórios"}
@@ -200,7 +188,6 @@ def devolver_livro(usuario_id, livro_id):
     cursor = conn.cursor()
 
     try:
-        # Verificar se o livro está emprestado
         cursor.execute('SELECT status FROM livros WHERE id = ?', (livro_id,))
         livro = cursor.fetchone()
 
@@ -229,119 +216,132 @@ def devolver_livro(usuario_id, livro_id):
         conn.close()
 
 
-# Renovação de empréstimo
 def renovar_emprestimo(usuario_id, livro_id):
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-    SELECT id, data_devolucao FROM emprestimos WHERE usuario_id = ? AND livro_id = ? AND data_devolucao IS NULL
-    ''', (usuario_id, livro_id))
-    emprestimo = cursor.fetchone()
-    if emprestimo:
-        nova_data_devolucao = datetime.strptime(emprestimo[1], '%Y-%m-%d') + timedelta(days=14)
-        cursor.execute('UPDATE emprestimos SET data_devolucao = ? WHERE id = ?', (nova_data_devolucao.date(), emprestimo[0]))
-        conn.commit()
-        print(f'Renovação realizada com sucesso. Nova data de devolução: {nova_data_devolucao.date()}')
-    else:
-        print('O livro não pode ser renovado.')
-    conn.close()
+    if not usuario_id or not livro_id:
+        return {"success": False, "message": "ID do usuário e do livro são obrigatórios"}
 
-# Consulta de histórico de empréstimos
-def consultar_historico(usuario_id):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute('''
-    SELECT livros.titulo, emprestimos.data_emprestimo, emprestimos.data_devolucao
-    FROM emprestimos
-    JOIN livros ON emprestimos.livro_id = livros.id
-    WHERE emprestimos.usuario_id = ?
-    ''', (usuario_id,))
-    historico = cursor.fetchall()
-    if historico:
-        for item in historico:
-            print(f'Título: {item[0]}, Data de Empréstimo: {item[1]}, Data de Devolução: {item[2]}')
-    else:
-        print('Nenhum histórico encontrado.')
-    conn.close()
 
-# Consulta de disponibilidade de livro
-def consultar_disponibilidade(livro_id):
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT status FROM livros WHERE id = ?', (livro_id,))
-    status = cursor.fetchone()
-    if status:
-        print(f'O livro está {status[0]}.')
-    else:
-        print('Livro não encontrado.')
-    conn.close()
+    try:
+        cursor.execute('SELECT status FROM livros WHERE id = ?', (livro_id,))
+        livro = cursor.fetchone()
 
-# Renovação de empréstimo
-def renovar_emprestimo(usuario_id, livro_id):
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-    SELECT id, data_devolucao FROM emprestimos
-    WHERE usuario_id = ? AND livro_id = ? AND data_devolucao IS NULL
-    ''', (usuario_id, livro_id))
-    emprestimo = cursor.fetchone()
-    if emprestimo:
-        max_renovacoes = 2  # Número máximo de renovações permitidas
-        cursor.execute('SELECT COUNT(*) FROM emprestimos WHERE livro_id = ? AND data_devolucao IS NULL', (livro_id,))
-        num_renovacoes = cursor.fetchone()[0]
-        if num_renovacoes < max_renovacoes:
-            nova_data_devolucao = datetime.now().date() + timedelta(days=14)
-            cursor.execute('UPDATE emprestimos SET data_devolucao = ? WHERE id = ?', (nova_data_devolucao, emprestimo[0]))
-            conn.commit()
-            print(f'Renovação realizada com sucesso. Nova data de devolução: {nova_data_devolucao}')
+        if livro is None:
+            return {"success": False, "message": "Livro não encontrado"}
+
+        status = livro[0]
+        if status == 'Emprestado':
+            cursor.execute('''
+            SELECT id, data_devolucao FROM emprestimos WHERE usuario_id = ? AND livro_id = ? 
+            ''', (usuario_id, livro_id))
+            emprestimo = cursor.fetchone()
+
+            if emprestimo:
+                emprestimo_id = emprestimo[0]
+                nova_data_devolucao = datetime.strptime(emprestimo[1], '%Y-%m-%d') + timedelta(days=7)
+
+                cursor.execute('UPDATE emprestimos SET data_devolucao = ? WHERE id = ?', (nova_data_devolucao.date(), emprestimo_id))
+                conn.commit()
+                return {"success": True, "message": "Empréstimo renovado com sucesso"}
+            else:
+                return {"success": False, "message": "O livro não está registrado como emprestado para este usuário"}
         else:
-            print('Número máximo de renovações atingido.')
-    else:
-        print('O livro não pode ser renovado.')
-    conn.close()
+            return {"success": False, "message": "O livro não está marcado como emprestado"}
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Erro de banco de dados: {str(e)}"}
+    finally:
+        conn.close()
 
 
+def consultar_historico(usuario_id):
+    if not usuario_id:
+        return {"success": False, "message": "ID do usuário é obrigatório"}
 
-# Geração de relatórios
-def gerar_relatorio(tipo):
     conn = connect_db()
     cursor = conn.cursor()
-    if tipo == 'emprestados':
-        cursor.execute('''
-        SELECT livros.titulo, COUNT(emprestimos.id) AS total
-        FROM emprestimos
-        JOIN livros ON emprestimos.livro_id = livros.id
-        WHERE emprestimos.data_devolucao IS NULL
-        GROUP BY livros.titulo
-        ''')
-    elif tipo == 'disponiveis':
-        cursor.execute('''
-        SELECT titulo FROM livros WHERE status = 'Disponível'
-        ''')
-    elif tipo == 'atraso':
-        cursor.execute('''
-        SELECT livros.titulo, emprestimos.data_devolucao
-        FROM emprestimos
-        JOIN livros ON emprestimos.livro_id = livros.id
-        WHERE emprestimos.data_devolucao < ?
-        AND emprestimos.data_devolucao IS NOT NULL
-        ''', (datetime.now().date(),))
-    else:
-        print('Tipo de relatório inválido.')
-        conn.close()
-        return
-    relatorio = cursor.fetchall()
-    if relatorio:
-        for item in relatorio:
-            print(item)
-    else:
-        print('Nenhum dado disponível para o relatório solicitado.')
-    conn.close()
 
-# Função principal
+    try:
+        cursor.execute('''
+        SELECT livros.titulo, emprestimos.data_emprestimo, emprestimos.data_devolucao
+        FROM emprestimos
+        JOIN livros ON emprestimos.livro_id = livros.id
+        WHERE emprestimos.usuario_id = ?
+        ''', (usuario_id,))
+        historico = cursor.fetchall()
+
+        if historico:
+            return {"success": True, "historico": historico}
+        else:
+            return {"success": False, "message": "Nenhum histórico encontrado"}
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Erro de banco de dados: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def consultar_disponibilidade(livro_id):
+    if not livro_id:
+        return {"success": False, "message": "ID do livro é obrigatório"}
+
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('SELECT status FROM livros WHERE id = ?', (livro_id,))
+        status = cursor.fetchone()
+        
+        if status:
+            return {"success": True, "status": status[0]}
+        else:
+            return {"success": False, "message": "Livro não encontrado"}
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Erro de banco de dados: {str(e)}"}
+    finally:
+        conn.close()
+
+
+def gerar_relatorio(tipo):
+    if tipo not in ['emprestados', 'disponiveis', 'atraso']:
+        return {"success": False, "message": "Tipo de relatório inválido"}
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    try:
+        if tipo == 'emprestados':
+            cursor.execute('''
+            SELECT livros.titulo, emprestimos.data_devolucao
+            FROM emprestimos
+            JOIN livros ON emprestimos.livro_id = livros.id
+            WHERE livros.status = 'Emprestado'
+            ''')
+        elif tipo == 'disponiveis':
+            cursor.execute('''
+            SELECT titulo FROM livros WHERE status = 'Disponível'
+            ''')
+        elif tipo == 'atraso':
+            cursor.execute('''
+            SELECT livros.titulo, emprestimos.data_devolucao
+            FROM emprestimos
+            JOIN livros ON emprestimos.livro_id = livros.id
+            WHERE emprestimos.data_devolucao < ?
+            AND livros.status = 'Emprestado'
+            ''', (datetime.now().date(),))
+
+        relatorio = cursor.fetchall()
+        if relatorio:
+            return {"success": True, "data": relatorio}
+        else:
+            return {"success": False, "message": "Nenhum dado disponível para o relatório solicitado"}
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Erro de banco de dados: {str(e)}"}
+    finally:
+        conn.close()
+
+
 def main():
     create_tables()
-    # Exemplo de uso
     cadastrar_usuario('João Silva', '12345678901', 'joao.silva@example.com', '11987654321')
     cadastrar_livro('Python para Iniciantes', 'Jane Doe', '9781234567890', 'Tecnologia')
     emprestar_livro(1, 1)
