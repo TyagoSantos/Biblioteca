@@ -1,73 +1,75 @@
 import pytest
-import re
+import sqlite3
+from unittest.mock import patch, MagicMock
+from app import cadastrar_usuario
 
-# Funções fictícias para simular o comportamento real
-def is_valid_cpf(cpf):
-    cpf = re.sub(r'\D', '', cpf)
-    return len(cpf) == 11 and cpf.isdigit()
 
-def is_valid_email(email):
-    return re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email) is not None
-
-def cadastrar_usuario(nome, cpf, email, telefone):
-    if not nome or not cpf or not email or not telefone:
-        return {"success": False, "message": "Todos os campos são obrigatórios"}
-    
-    if not is_valid_cpf(cpf):
-        return {"success": False, "message": "CPF inválido"}
-    
-    if not is_valid_email(email):
-        return {"success": False, "message": "E-mail inválido"}
-    
-    # Simulação de sucesso na inserção
-    return {"success": True, "message": "Usuário cadastrado com sucesso"}
-
-# Cenário Principal: Cadastro de Usuário Válido
-def test_cadastrar_usuario_valido():
-    nome = "João Silva"
-    cpf = "123.456.789-09" 
+def test_cadastrar_usuario_sucesso():
+    nome = "João da Silva"
+    cpf = "12345678901"
     email = "joao.silva@example.com"
     telefone = "(11) 91234-5678"
     
-    result = cadastrar_usuario(nome, cpf, email, telefone)
-    
-    assert result["success"] is True
-    assert result["message"] == "Usuário cadastrado com sucesso"
+    with patch("app.connect_db") as mock_connect_db, \
+         patch("app.is_valid_cpf", return_value=True), \
+         patch("app.is_valid_email", return_value=True):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect_db.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.execute.return_value = None
+        
+        result = cadastrar_usuario(nome, cpf, email, telefone)
+        
+        assert result == "Usuário cadastrado com sucesso"
 
-# Cenário Alternativo: Cadastro de Usuário com Dados Incompletos
-def test_cadastrar_usuario_dados_incompletos():
-    nome = "João Silva"
-    cpf = "123.456.789-09"
-    email = ""  # E-mail está faltando
-    telefone = "(11) 91234-5678"
-    
-    result = cadastrar_usuario(nome, cpf, email, telefone)
-    
-    assert result["success"] is False
-    assert result["message"] == "Todos os campos são obrigatórios"
 
-# Cenário Alternativo: Cadastro de Usuário com Dados Inválidos
+def test_cadastrar_usuario_campos_faltando():
+    result = cadastrar_usuario("", "12345678901", "joao.silva@example.com", "(11) 91234-5678")
+    
+    assert result == "Todos os campos são obrigatórios"
+
+
 def test_cadastrar_usuario_cpf_invalido():
-    nome = "João Silva"
-    cpf = "111.222.333-4g"
+    nome = "João da Silva"
+    cpf = "123"  
     email = "joao.silva@example.com"
     telefone = "(11) 91234-5678"
     
-    result = cadastrar_usuario(nome, cpf, email, telefone)
+    with patch("app.is_valid_cpf", return_value=False):
+        result = cadastrar_usuario(nome, cpf, email, telefone)
     
-    assert result["success"] is False
-    assert result["message"] == "CPF inválido"
+    assert result == "CPF inválido"
 
-# Cenário Alternativo: Cadastro de Usuário com Dados Inválidos
+
 def test_cadastrar_usuario_email_invalido():
-    nome = "João Silva"
-    cpf = "111.222.333-44"
-    email = "joao.silvaexample.com"
+    nome = "João da Silva"
+    cpf = "12345678901"
+    email = "joao.silvaexample.com"  
     telefone = "(11) 91234-5678"
     
-    result = cadastrar_usuario(nome, cpf, email, telefone)
+    with patch("app.is_valid_email", return_value=False):
+        result = cadastrar_usuario(nome, cpf, email, telefone)
     
-    assert result["success"] is False
-    assert result["message"] == "E-mail inválido"
+    assert result == "E-mail inválido"
 
-# Mais testes podem ser adicionados para outros cenários, como e-mail inválido, telefone inválido, etc.
+
+def test_cadastrar_usuario_erro_bd():
+    nome = "João da Silva"
+    cpf = "12345678901"
+    email = "joao.silva@example.com"
+    telefone = "(11) 91234-5678"
+    
+    with patch("app.connect_db") as mock_connect_db, \
+         patch("app.is_valid_cpf", return_value=True), \
+         patch("app.is_valid_email", return_value=True):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect_db.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.execute.side_effect = sqlite3.IntegrityError("CPF ou e-mail já cadastrado")
+        
+        result = cadastrar_usuario(nome, cpf, email, telefone)
+        
+        assert result == "CPF ou e-mail já cadastrado"
+

@@ -3,7 +3,7 @@ import sqlite3
 from unittest.mock import patch, MagicMock
 from app import consultar_historico
 
-# Cenário Principal: Histórico encontrado com sucesso
+
 def test_consultar_historico_sucesso():
     usuario_id = 1
 
@@ -25,7 +25,7 @@ def test_consultar_historico_sucesso():
         assert len(result["historico"]) == 2
         assert result["historico"][0] == ('Livro A', '2024-08-01', '2024-08-15')
 
-# Cenário Alternativo: Histórico não encontrado
+
 def test_consultar_historico_vazio():
     usuario_id = 1
 
@@ -43,14 +43,14 @@ def test_consultar_historico_vazio():
         assert result["success"] is False
         assert result["message"] == "Nenhum histórico encontrado"
 
-# Cenário Alternativo: Nenhum ID fornecido
+
 def test_consultar_historico_sem_id():
     result = consultar_historico(None)
 
     assert result["success"] is False
     assert result["message"] == "ID do usuário é obrigatório"
 
-# Cenário Alternativo: Erro de banco de dados ao consultar
+
 def test_consultar_historico_erro_bd():
     usuario_id = 1
 
@@ -66,5 +66,3 @@ def test_consultar_historico_erro_bd():
         assert result["success"] is False
         assert result["message"].startswith("Erro de banco de dados")
 
-if __name__ == "__main__":
-    pytest.main()

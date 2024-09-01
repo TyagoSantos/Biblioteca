@@ -3,7 +3,7 @@ import sqlite3
 from unittest.mock import patch, MagicMock
 from app import gerar_relatorio
 
-# Cenário Principal: Relatório de livros emprestados com sucesso
+
 def test_gerar_relatorio_emprestados():
     with patch("app.connect_db") as mock_connect_db:
         mock_conn = MagicMock()
@@ -27,7 +27,7 @@ def test_gerar_relatorio_emprestados():
             ]
         }
 
-# Cenário Principal: Relatório de livros disponíveis com sucesso
+
 def test_gerar_relatorio_disponiveis():
     with patch("app.connect_db") as mock_connect_db:
         mock_conn = MagicMock()
@@ -51,7 +51,6 @@ def test_gerar_relatorio_disponiveis():
             ]
         }
 
-# Cenário Principal: Relatório de livros com devoluções em atraso
 def test_gerar_relatorio_atraso():
     with patch("app.connect_db") as mock_connect_db:
         mock_conn = MagicMock()
@@ -76,7 +75,6 @@ def test_gerar_relatorio_atraso():
         }
 
 
-# Cenário Alternativo: Tipo de relatório inválido
 def test_gerar_relatorio_invalido():
     result = gerar_relatorio('invalido')
 
@@ -86,7 +84,6 @@ def test_gerar_relatorio_invalido():
     }
 
 
-# Cenário Alternativo: Nenhum dado disponível para o relatório solicitado
 def test_gerar_relatorio_sem_dados():
     with patch("app.connect_db") as mock_connect_db:
         mock_conn = MagicMock()
@@ -102,7 +99,7 @@ def test_gerar_relatorio_sem_dados():
         assert result["success"] is False
         assert result["message"] == "Nenhum dado disponível para o relatório solicitado"
 
-# Cenário Alternativo: Erro de banco de dados ao gerar relatório
+
 def test_gerar_relatorio_erro_bd():
     with patch("app.connect_db") as mock_connect_db:
         mock_conn = MagicMock()
@@ -116,5 +113,3 @@ def test_gerar_relatorio_erro_bd():
         assert result["success"] is False
         assert result["message"].startswith("Erro de banco de dados")
 
-if __name__ == "__main__":
-    pytest.main()

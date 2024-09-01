@@ -338,20 +338,3 @@ def gerar_relatorio(tipo):
         return {"success": False, "message": f"Erro de banco de dados: {str(e)}"}
     finally:
         conn.close()
-
-
-def main():
-    create_tables()
-    cadastrar_usuario('João Silva', '12345678901', 'joao.silva@example.com', '11987654321')
-    cadastrar_livro('Python para Iniciantes', 'Jane Doe', '9781234567890', 'Tecnologia')
-    emprestar_livro(1, 1)
-    devolver_livro(1, 1)
-    atualizar_usuario(1, telefone='11900000000')
-    renovar_emprestimo(1, 1)
-    consultar_historico(1)
-    gerar_relatorio('emprestados')
-    gerar_relatorio('disponiveis')
-    gerar_relatorio('atraso')
-
-if __name__ == "__main__":
-    main()
